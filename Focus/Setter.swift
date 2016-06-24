@@ -23,19 +23,19 @@ public struct Setter<S, T, A, B> : SetterType {
     public typealias AltSource = T
     public typealias AltTarget = B
 
-    private let _over: (A -> B) -> S -> T
+    private let _over: ((A) -> B) -> (S) -> T
 
-    public init(over: (A -> B) -> S -> T) {
+    public init(over: ((A) -> B) -> (S) -> T) {
         self._over = over
     }
 
-    public func over(f : A -> B) -> S -> T {
+    public func over(_ f : (A) -> B) -> (S) -> T {
         return _over(f)
     }
 }
 
 public protocol SetterType : OpticFamilyType {
-    func over(f: Target -> AltTarget) -> Source -> AltSource
+    func over(_ f: (Target) -> AltTarget) -> (Source) -> AltSource
 }
 
 extension SetterType {
@@ -43,7 +43,7 @@ extension SetterType {
     public func compose<Other : SetterType where
         Other.Source == Target,
         Other.AltSource == AltTarget>
-        (other : Other) -> Setter<Source, AltSource, Other.Target, Other.AltTarget> {
+        (_ other : Other) -> Setter<Source, AltSource, Other.Target, Other.AltTarget> {
             return Setter { f in self.over(other.over(f)) }
     }
 }

@@ -45,27 +45,27 @@ public struct Lens<S, T, A, B> : LensType {
 	public typealias AltTarget = B
 
 	/// Gets the Indexed Costate Comonad Coalgebroid underlying the receiver.
-	private let _run : S -> IxStore<A, B, T>
+	private let _run : (S) -> IxStore<A, B, T>
 
 	/// Runs the lens on a structure to retrieve the underlying Indexed Costate 
 	/// Comonad Coalgebroid.
-	public func run(v : S) -> IxStore<A, B, T> {
+	public func run(_ v : S) -> IxStore<A, B, T> {
 		return _run(v)
 	}
 
 	/// Produces a lens from an Indexed Costate Comonad Coalgebroid.
-	public init(_ f : S -> IxStore<A, B, T>) {
+	public init(_ f : (S) -> IxStore<A, B, T>) {
 		_run = f
 	}
 
 	/// Creates a lens from a getter/setter pair.
-	public init(get : S -> A, set : (S, B) -> T) {
+	public init(get : (S) -> A, set : (S, B) -> T) {
 		self.init({ v in IxStore(get(v)) { set(v, $0) } })
 	}
 
 	/// Creates a lens that transforms set values by a given function before 
 	/// they are returned.
-	public init(get : S -> A, modify : (S, A -> B) -> T) {
+	public init(get : (S) -> A, modify : (S, (A) -> B) -> T) {
 		self.init(get: get, set: { v, x in modify(v) { _ in x } })
 	}
 }
@@ -86,24 +86,24 @@ extension Lens {
 }
 
 extension Lens : SetterType {
-	public func over(f: A -> B) -> S -> T {
+	public func over(_ f: (A) -> B) -> (S) -> T {
 		return { s in self.modify(s, f) }
 	}
 }
 
 extension LensType {
 	/// Runs the getter on a given structure.
-	public func get(v : Source) -> Target {
+	public func get(_ v : Source) -> Target {
 		return run(v).pos
 	}
 
 	/// Runs the setter on a given structure and value to yield a new structure.
-	public func set(v : Source, _ x : AltTarget) -> AltSource {
+	public func set(_ v : Source, _ x : AltTarget) -> AltSource {
 		return run(v).peek(x)
 	}
 
 	/// Transform the value of the retrieved field by a function.
-	public func modify(v : Source, _ f : Target -> AltTarget) -> AltSource {
+	public func modify(_ v : Source, _ f : (Target) -> AltTarget) -> AltSource {
 		let q = run(v)
 		return q.peek(f(q.pos))
 	}
@@ -112,7 +112,7 @@ extension LensType {
 	public func compose<Other : LensType where
 		Self.Target == Other.Source,
 		Self.AltTarget == Other.AltSource>
-		(other : Other) -> Lens<Source, AltSource, Other.Target, Other.AltTarget> {
+		(_ other : Other) -> Lens<Source, AltSource, Other.Target, Other.AltTarget> {
 			return Lens { v in
 				let q1 = self.run(v)
 				let q2 = other.run(q1.pos)
@@ -121,7 +121,7 @@ extension LensType {
 	}
 
 	/// Uses the receiver to focus in on a State Monad.
-	public func zoom<X>(a : IxState<Target, AltTarget, X>) -> IxState<Source, AltSource, X> {
+	public func zoom<X>(_ a : IxState<Target, AltTarget, X>) -> IxState<Source, AltSource, X> {
 		return IxState { s1 in
 			let q = self.run(s1)
 			let (x, s2) = a.run(q.pos)
@@ -130,7 +130,7 @@ extension LensType {
 	}
 
 	/// Creates a `Lens` that focuses on two structures.
-	public func split<Other : LensType>(right : Other) -> Lens<
+	public func split<Other : LensType>(_ right : Other) -> Lens<
 		(Source, Other.Source), (AltSource, Other.AltSource),
 		(Target, Other.Target), (AltTarget, Other.AltTarget)>
 	{
@@ -145,7 +145,7 @@ extension LensType {
 	/// on distinct subparts.
 	public func fanout<Other : LensType
 		where Source == Other.Source, AltTarget == Other.AltTarget>
-		(right : Other) -> Lens<Source, (AltSource, Other.AltSource), (Target, Other.Target), AltTarget>
+		(_ right : Other) -> Lens<Source, (AltSource, Other.AltSource), (Target, Other.Target), AltTarget>
 	{
 		return Lens { s in
 			let q1 = self.run(s)

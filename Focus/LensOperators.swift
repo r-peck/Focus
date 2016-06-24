@@ -7,7 +7,7 @@
 //
 
 /// The identity function.
-internal func identity<A>(a : A) -> A {
+internal func identity<A>(_ a : A) -> A {
 	return a
 }
 
@@ -16,7 +16,7 @@ internal func identity<A>(a : A) -> A {
 ///     f : B -> C
 ///     g : A -> B
 ///     (f • g)(x) === f(g(x)) : A -> B -> C
-internal func • <A, B, C>(f : B -> C, g : A -> B) -> A -> C {
+internal func • <A, B, C>(f : (B) -> C, g : (A) -> B) -> (A) -> C {
 	return { (a : A) -> C in
 		return f(g(a))
 	}
